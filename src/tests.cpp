@@ -1,4 +1,8 @@
 #include "tests.h"
+#include <cmath>   
+#include <stdexcept>
+#include <algorithm> 
+#include <vector>
 
 // 练习1，实现库函数strlen
 int my_strlen(char *str) {
@@ -7,7 +11,11 @@ int my_strlen(char *str) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+
+    int length = 0;
+    for(; *str != '\0';str++,length++);
+
+    return length;
 }
 
 
@@ -19,6 +27,31 @@ void my_strcat(char *str_1, char *str_2) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+
+    /*char *temp = str_1;
+    for(; *str_1 != '\0';str_1++);
+    for(; *str_2 != '\0';str_2++){
+        *str_1 = *str_2;
+        str_1++;
+        str_2++;
+    }
+
+    *str_1 = '\0';
+    *str_1 = *temp;*/
+
+       char *temp = str_1;    
+    while (*str_1 != '\0') {  
+        str_1++;  
+    }  
+
+    while (*str_2 != '\0') {  
+        *str_1 = *str_2;  
+        str_1++;  
+        str_2++;  
+    }  
+   
+    *str_1 = '\0';  
+    
 }
 
 
@@ -31,7 +64,27 @@ char* my_strstr(char *s, char *p) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    //return 0;
+
+    if (!*p) {  
+        return s;  
+    }  
+  
+    char *s_temp, *p_temp;  
+    for (; *s; s++) { 
+        s_temp = s;  
+        p_temp = p;    
+    
+        while (*s_temp && *p_temp && (*s_temp == *p_temp)) {  
+            s_temp++;  
+            p_temp++;  
+        }  
+    
+        if (!*p_temp) {  
+            return s;   
+        }    
+    }   
+    return 0;  
 }
 
 
@@ -97,6 +150,22 @@ void rgb2gray(float *in, float *out, int h, int w) {
 
     // IMPLEMENT YOUR CODE HERE
     // ...
+
+     int index_in, index_out;  
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {   
+            index_in = 3 * (i * w + j);   
+  
+            float R = in[index_in];  
+            float G = in[index_in + 1];  
+            float B = in[index_in + 2];  
+    
+            float gray = 0.1140 * B + 0.5870 * G + 0.2989 * R;  
+    
+            index_out = i * w + j;   
+            out[index_out] = gray;  
+        }  
+    } 
 }
 
 // 练习5，实现图像处理算法 resize：缩小或放大图像
@@ -196,14 +265,52 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
      *        所以需要对其进行边界检查
      */
 
-    int new_h = h * scale, new_w = w * scale;
-    // IMPLEMENT YOUR CODE HERE
+     //int new_h = h * scale, new_w = w * scale;
+     // IMPLEMENT YOUR CODE HERE
+        int new_h = static_cast<int>(h * scale + 0.5);  
+        int new_w = static_cast<int>(w * scale + 0.5);  
+
+        if (new_h <= 0 || new_w <= 0) {  
+        throw std::runtime_error("缩放后的图像尺寸无效");  
+        }  
+  
+        for (int i = 0; i < new_h; ++i) {  
+            for (int j = 0; j < new_w; ++j) {  
+                float x0 = static_cast<float>(j) / scale;  
+                float y0 = static_cast<float>(i) / scale;  
+    
+                int x1 = static_cast<int>(std::floor(x0));  
+                int y1 = static_cast<int>(std::floor(y0));  
+                int x2 = std::min(x1 + 1, w - 1); 
+                int y2 = std::min(y1 + 1, h - 1);   
+  
+                float dx = x0 - x1;  
+                float dy = y0 - y1;    
+                float one_minus_dx = 1 - dx;  
+                float one_minus_dy = 1 - dy;  
+                float weight1 = one_minus_dx * one_minus_dy;  
+                float weight2 = dx * one_minus_dy;  
+                float weight3 = one_minus_dx * dy;  
+                float weight4 = dx * dy;  
+  
+               for (int k = 0; k < c; ++k) {  
+                    float P1 = in[(y1 * w + x1) * c + k];  
+                    float P2 = in[(y1 * w + x2) * c + k];  
+                    float P3 = in[(y2 * w + x1) * c + k];  
+                    float P4 = in[(y2 * w + x2) * c + k];  
+  
+                    float out_value = P1 * weight1 + P2 * weight2 + P3 * weight3 + P4 * weight4;
+  
+                    out[(i * new_w + j) * c + k] = out_value;  
+            }  
+        }  
+    }
 
 }
 
 
 // 练习6，实现图像处理算法：直方图均衡化
-void hist_eq(float *in, int h, int w) {
+//void hist_eq(float *in, int h, int w) {
     /**
      * 将输入图片进行直方图均衡化处理。参数含义：
      * (1) float *in: 输入的灰度图片。
@@ -221,4 +328,34 @@ void hist_eq(float *in, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-}
+
+    /*
+    const int num_gray_levels = 256;  
+    std::vector<int> histogram(num_gray_levels, 0);  
+    std::vector<float> cdf(num_gray_levels, 0.0f);  
+    std::vector<float> lut(num_gray_levels, 0.0f);
+  
+    for (int y = 0; y < h; ++y) {  
+        for (int x = 0; x < w; ++x) {  
+            int gray_level = static_cast<int>(in[y * w + x] * 255); 
+            histogram[gray_level]++;  
+        }  
+    }  
+  
+    int total_pixels = h * w;  
+    cdf[0] = histogram[0] / static_cast<float>(total_pixels);  
+    for (int i = 1; i < num_gray_levels; ++i) {  
+        cdf[i] = cdf[i - 1] + histogram[i] / static_cast<float>(total_pixels);  
+    }  
+  
+    for (int i = 0; i < num_gray_levels; ++i) {  
+        lut[i] = static_cast<float>(i) / (num_gray_levels - 1) * (cdf[num_gray_levels - 1] - cdf[0]) + cdf[0]; 
+    }  
+  
+    for (int y = 0; y < h; ++y) {  
+        for (int x = 0; x < w; ++x) {  
+            int gray_level = static_cast<int>(in[y * w + x] * 255);
+            in[y * w + x] = lut[gray_level] / 255.0f; 
+        }  
+    }
+}*/
