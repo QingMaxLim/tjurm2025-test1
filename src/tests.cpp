@@ -7,7 +7,12 @@ int my_strlen(char *str) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    
+    int len = 0;
+    for (; *str != '\0';str++,len++);
+
+    return len;
+
 }
 
 
@@ -19,6 +24,10 @@ void my_strcat(char *str_1, char *str_2) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+
+    for(; *str_1 != '\0';str_1++);
+
+    while(*str_1++ = *str_2++);
 }
 
 
@@ -31,6 +40,48 @@ char* my_strstr(char *s, char *p) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    
+    
+    char* pTemp = p;
+    char* sTemp = s;
+    
+    int pLen = 0;
+    int sLen = 0;
+    
+    for (; *pTemp != '\0'; pLen++, pTemp++);
+    for (; *sTemp != '\0'; sLen++, sTemp++);    
+    int i = 0;
+    int j = -1;
+    
+    int next[pLen];
+    
+    next[i] = j;
+    
+    while (i < pLen){
+        if (j == -1 || *(p+i) == *(p+j))
+        {
+            next[++i] = ++j;
+        }else{
+            j = next[j];
+        }
+        
+    }
+
+    int m = 0;
+    int n = 0;
+    while (m < sLen && n < pLen){
+        if (n == -1 || *(s + m) == *(p+n))
+        {
+            m++;
+            n++;
+        }else{
+            n = next[n];
+        }
+        
+    }
+    
+    if (n == pLen) return s + m - pLen;
+    
     return 0;
 }
 
@@ -97,6 +148,15 @@ void rgb2gray(float *in, float *out, int h, int w) {
 
     // IMPLEMENT YOUR CODE HERE
     // ...
+
+
+    int size = w * h * 3;
+    int index = 0;
+
+    for(int i = 0;i < size; i += 3){
+        out[index] = in[i] * 0.1140 + in[i+1] * 0.5870 + in[i+2] *0.2989;
+        index++;
+    }
 }
 
 // 练习5，实现图像处理算法 resize：缩小或放大图像
@@ -199,6 +259,35 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
     int new_h = h * scale, new_w = w * scale;
     // IMPLEMENT YOUR CODE HERE
 
+    for (int i = 0; i < new_w*new_h; i++){
+        int row = i / new_w;
+        int col = i % new_w;
+        float x = (row+0.5)/scale -0.5;
+        
+        if (x<0) x = 0;
+        if(x >= h-1) x = h-2;
+        
+        int fx = (int)x;
+        x = x-fx;
+        float x1 = 1.0-x;
+
+        float y = (col +0.5)/scale -0.5;
+        
+        if(y<0)y=0;
+        if(y>=w)y=w-2;
+        
+        int fy = (int)y;
+        y = y-fy;
+        float y1=1.0-y;
+
+        float val_B = (in[fx*w*3+3*fy]*x1*y1+in[(fx+1)*w*3+3*fy]*x*y1+in[fx*w*3+(fy+1)*3]*x1*y+in[(fx+1)*w*3+(fy+1)*3]*x*y);        
+        float val_G = (in[fx*w*3+1+3*fy]*x1*y1+in[(fx+1)*w*3+1+3*fy]*x*y1+in[fx*w*3+1+(fy+1)*3]*x1*y+in[(fx+1)*w*3+1+(fy+1)*3]*x*y);
+        float val_R = (in[fx*w*3+2+3*fy]*x1*y1+in[(fx+1)*w*3+2+3*fy]*x*y1+in[fx*w*3+2+(fy+1)*3]*x1*y+in[(fx+1)*w*3+2+(fy+1)*3]*x*y);
+
+        out[i*3] = val_B;
+        out[i*3+1] = val_G;
+        out[i*3+2] = val_R;
+    }
 }
 
 
@@ -221,4 +310,29 @@ void hist_eq(float *in, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+
+    int numberOfPixels[256] = {0};
+    float pixelRatio[256] = {.00};
+    float cumulativeRatio[256] = {.00};
+
+    for(int i = 0;i <  w*h;i++){
+        int index = in[i];
+        numberOfPixels[index]++;
+    }
+
+    for(int i = 0;i < 256;i++){
+        pixelRatio[i] = ((float)numberOfPixels[i]/(w*h));
+    }
+
+    cumulativeRatio[0] = pixelRatio[0];
+    for(int i = 1;i < 255;i++){
+        if(pixelRatio[i] != .00){
+            cumulativeRatio[i] =  pixelRatio[i] + cumulativeRatio[i-1];
+        }
+    }
+
+    for(int i = 0;i < w*h;i++){
+        int index = in[i];
+        in[i] = cumulativeRatio[index] * 255;
+    }
 }
